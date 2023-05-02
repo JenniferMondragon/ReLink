@@ -211,7 +211,6 @@ if __name__ == "__main__":
 
     # sort list by the count
     # syntax gathered from https://www.w3schools.com/python/ref_func_sorted.asp
-    # and here https://www.programiz.com/python-programming/methods/built-in/sorted
     freq_user = sorted(frequent_users.items(), key=lambda x: x[1], reverse=True)
     comm_user = sorted(common_users.items(), key=lambda x: x[1], reverse=True)
     near_user = sorted(nearby_users.items(), key=lambda x: x[1], reverse=True)
