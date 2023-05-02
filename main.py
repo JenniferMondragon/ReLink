@@ -15,8 +15,8 @@ import networkx as nx
 # showcase the final graph for the picks
 import matplotlib.pyplot as plt
 
-# for shortest path
-from heapq import heappop, heappush
+# for running time
+import time
 
 # sets up to environ (when on laptop need to verify)
 os.environ["SPOTIPY_CLIENT_ID"] = "2956ecdcef53422b89a179f531b14abf"
@@ -50,8 +50,6 @@ def get_related_artists(artist_input, auth):
     # adds the artist from the results to a list
     related_artist_list = [artist['id'] for artist in results['artists']]
 
-    print(related_artist_list)
-
     # returns the lists
     return related_artist_list
 
@@ -71,41 +69,32 @@ def shortest_path(input_song, input_artist, end_song, end_artist, playlist, auth
     graph = nx.DiGraph()
 
     # add input song to the graph
-    input_song_search = auth.track(input_song, market='US')
-    graph.add_node(input_song, weight=0, artist=[input_song_search['artists'][0]['id']])
+    graph.add_node(input_artist, weight=0)
 
     # add related artists to the graph
-    adding = [input_song]
+    adding = [input_artist]
     visited = []
 
     while adding:
-        adding_song = adding.pop(0)
+        adding_artist = adding.pop(0)
 
         # adding related artist to the graph
-        if adding_song not in visited:
+        if adding_artist not in visited:
             # add to the visited list
-            visited.append(adding_song)
+            visited.append(adding_artist)
 
-            # pull song artist then get the related artists
-            track_artist = auth.track(adding_song, market='US')
-            adding_song_related = get_related_artists(track_artist['artists'][0]['id'], auth)
+            # get the related artists
+            adding_related = get_related_artists(adding_artist, auth)
 
-            for related in adding_song_related:
+            for related in adding_related:
 
                 if not graph.has_node(related):
-                    graph.add_node(related, weight=float('inf'), artist=[])
+                    graph.add_node(related, weight=float('inf'))
 
-                graph.add_edge(adding_song, related, weight=1)
+                graph.add_edge(adding_artist, related, weight=1)
 
-                if related not in graph.nodes[adding_song]['artist']:
-                    graph.nodes[adding_song]['artist'].append(track_artist['artists'][0]['id'])
-
-                    if related == end_song:
-                        break
+                if related not in adding:
                     adding.append(related)
-
-        if adding_song == end_song:
-            break
 
     # display graph
     plot = nx.circulant_graph(graph)
@@ -116,16 +105,24 @@ def shortest_path(input_song, input_artist, end_song, end_artist, playlist, auth
     shortest_path_result = nx.dijkstra_path(graph, source=input_artist, target=end_artist, weight='weight')
 
     # puts songs in the playlist based on the path
+
+    # add original song
+    auth.playlist_add_items(playlist, input_song)
     for tracks in range(len(shortest_path_result) - 1):
         current_song = shortest_path_result[tracks]
-        next_song = shortest_path_result[tracks + 1]
-        rec = get_recommendation(next_song, graph.nodes[current_song]['artist'][0], auth)
-
+        rec = get_recommendation(current_song, graph.nodes[current_song]['artist'][0], auth)
         auth.playlist_add_items(playlist, rec)
+
+    # add ending song
+    auth.playlist_add_items(playlist, end_song)
 
 
 # main function
 if __name__ == "__main__":
+
+    # to calculate run time
+    starting_time = time.time()
+
     # creates the playlist name, description, and adds the playlist to the user account
     playlist_name = input("What would you like to name the playlist? \n")
     playlist_description = "This playlist was generated through ReLink! :)"
@@ -299,4 +296,9 @@ if __name__ == "__main__":
     beginning_track_artist = beginning_track['artists'][0]['id']
 
     # call the shortest_path function that should connect the beginning song to the send song
-    shortest_path(beginning_track_id, beginning_track_artist, ending_track, ending_track_artist,  playlist, auth)
+    shortest_path(beginning_track_id, beginning_track_artist, ending_track, ending_track_artist, playlist, auth)
+
+    # ending time
+    ending_time = time.time()
+
+    print(f"Finished in {ending_time-starting_time} seconds.")
