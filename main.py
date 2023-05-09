@@ -19,9 +19,6 @@ import matplotlib.pyplot as plt
 # for running time
 import time
 
-# for the image on the playlist
-import base64
-
 # sets up to environ (when on laptop need to verify)
 os.environ["SPOTIPY_CLIENT_ID"] = "2956ecdcef53422b89a179f531b14abf"
 os.environ["SPOTIPY_CLIENT_SECRET"] = "4500954ae92f4c769e8129f27b23f15e"
@@ -94,6 +91,7 @@ def shortest_path(input_song, input_artist, end_song, end_artist, playlist, auth
 
             # get the related artists
             adding_related = get_related_artists(adding_artist, auth)
+            time.sleep(1)
 
             # adding them to the list
             for related in adding_related:
@@ -129,6 +127,7 @@ def shortest_path(input_song, input_artist, end_song, end_artist, playlist, auth
     for tracks in range(len(shortest_path_result) - 1):
         current_song = shortest_path_result[tracks]
         rec = get_recommendation(current_song, graph.nodes[current_song]['artist'][0], auth)
+        time.sleep(1)
         print(f"Adding {rec} to the playlist...")
         auth.playlist_add_items(playlist, rec)
 
@@ -152,6 +151,8 @@ if __name__ == "__main__":
     playlist_name = input("What would you like to name the playlist? \n")
     playlist = auth.user_playlist_create(auth.current_user()['id'], name=playlist_name, public=False,
                                          description="This playlist was generated through ReLink! :)")
+
+    time.sleep(5)
 
     # getting HTTP errors, though I gave perms to the application?
     # auth.playlist_upload_cover_image(playlist_id=playlist["id"], image_b64=image_decode)
@@ -200,10 +201,10 @@ if __name__ == "__main__":
                                  (27.80106097259567, -97.42606612683335)]},
 
         'Ashely': {'song_url': 'https://open.spotify.com/track/24MWSatP5sTylISvJONhnB?si=148242145bfd42fe',
-                    'coordinates': [(27.796734294405677, -97.43131715989082), (27.795187977337434, -97.42251651072178),
-                                    (27.800699511392146, -97.41417735316652), (27.79191558138719, -97.41757623961094),
-                                    (27.784543402146422, -97.42501236289972), (27.782534642670026, -97.42826954209868),
-                                    (27.781919054476596, -97.43292200548319)]}
+                   'coordinates': [(27.796734294405677, -97.43131715989082), (27.795187977337434, -97.42251651072178),
+                                   (27.800699511392146, -97.41417735316652), (27.79191558138719, -97.41757623961094),
+                                   (27.784543402146422, -97.42501236289972), (27.782534642670026, -97.42826954209868),
+                                   (27.781919054476596, -97.43292200548319)]}
     }
 
     # setting up how to get how frequently users are nearby
@@ -324,6 +325,7 @@ if __name__ == "__main__":
     beginning_track_artist = beginning_track['artists'][0]['id']
 
     # call the shortest_path function that should connect the beginning song to the send song
+    print("Finding Shortest Path....")
     shortest_path(beginning_track_id, beginning_track_artist, ending_track, ending_track_artist, playlist, auth)
 
     # ending time
