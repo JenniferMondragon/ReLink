@@ -1,6 +1,5 @@
 # RELINK
 import os
-import sys
 
 # Spotify API
 import spotipy
@@ -70,18 +69,13 @@ def shortest_path(input_song, input_artist, end_song, end_artist, playlist, auth
     graph = nx.DiGraph()
 
     # add input song to the graph
-    graph.add_node(input_artist, num_edges=0)
+    graph.add_node(input_artist, weight=0)
 
     # add related artists to the graph
     adding = [input_artist]
     visited = []
 
-    # taking extremely long, so I updated to stop after a certain amount
-    # found out it is due to limit request by Spotify API (you can get temporarily blocked if too many requests
-    max_depth = 25
-    depth = 0
-
-    while adding and depth < max_depth:
+    while adding:
         adding_artist = adding.pop(0)
 
         # adding related artist to the graph
@@ -91,25 +85,16 @@ def shortest_path(input_song, input_artist, end_song, end_artist, playlist, auth
 
             # get the related artists
             adding_related = get_related_artists(adding_artist, auth)
-            time.sleep(1)
 
-            # adding them to the list
             for related in adding_related:
 
-                # if they are not already on hte graph
                 if not graph.has_node(related):
-                    graph.add_node(related, num_edges=float('inf'))  # infinity because path has not been found yet
-                    print(f"Adding node: {related['name']}")  # prints the name of the artist
+                    graph.add_node(related, weight=float('inf'))
 
-                # adds connection between the nodes
-                graph.add_edge(adding_artist, related, num_edges=1)
+                graph.add_edge(adding_artist, related, weight=1)
 
-                # add if not (prevents duplicates)
                 if related not in adding:
                     adding.append(related)
-
-        # increases depth by 1
-        depth += 1
 
     # display graph
     plot = nx.circulant_graph(graph)
@@ -117,23 +102,19 @@ def shortest_path(input_song, input_artist, end_song, end_artist, playlist, auth
     plt.show()
 
     # uses the path function to find the shortest path
-    shortest_path_result = nx.dijkstra_path(graph, source=input_artist, target=end_artist, weight='num_edges')
+    shortest_path_result = nx.dijkstra_path(graph, source=input_artist, target=end_artist, weight='weight')
 
     # puts songs in the playlist based on the path
+
     # add original song
     auth.playlist_add_items(playlist, input_song)
-    print(f"Adding {input_song} to the playlist...")
-
     for tracks in range(len(shortest_path_result) - 1):
         current_song = shortest_path_result[tracks]
         rec = get_recommendation(current_song, graph.nodes[current_song]['artist'][0], auth)
-        time.sleep(1)
-        print(f"Adding {rec} to the playlist...")
         auth.playlist_add_items(playlist, rec)
 
     # add ending song
     auth.playlist_add_items(playlist, end_song)
-    print(f"Adding {end_song} to the playlist...")
 
 
 # main function
@@ -141,21 +122,12 @@ if __name__ == "__main__":
 
     # to calculate run time
     starting_time = time.time()
-    sys.stdout.flush()
-
-    # convert image to upload the image
-    # with open('logo.png', 'rb') as image:
-    # image_decode = base64.b64encode(image.read()).decode('utf-8')
 
     # creates the playlist name, description, and adds the playlist to the user account
     playlist_name = input("What would you like to name the playlist? \n")
+    playlist_description = "This playlist was generated through ReLink! :)"
     playlist = auth.user_playlist_create(auth.current_user()['id'], name=playlist_name, public=False,
-                                         description="This playlist was generated through ReLink! :)")
-
-    time.sleep(5)
-
-    # getting HTTP errors, though I gave perms to the application?
-    # auth.playlist_upload_cover_image(playlist_id=playlist["id"], image_b64=image_decode)
+                                         description=playlist_description)
 
     # ask the user what type of user (nearness) they would like to accept
     frequency_type = input(
@@ -164,47 +136,47 @@ if __name__ == "__main__":
 
     # FAKE USERS!!
     users = {
-        'Jennifer': {'song_url': 'https://open.spotify.com/track/1C5vvIOqcA7Qa1lNhFopgl?si=19db0c25b80b4a51',
+        'Jennifer': {'song_url': 'https://open.spotify.com/track/7cqnoQkEdgIhl0zzhqrEns?si=71690360a7c94fd4',
                      'coordinates': [(27.779701323291697, -97.41124281262692), (27.777367325016684, -97.41301801361622),
                                      (27.771242556638633, -97.4087260486171), (27.76714830715196, -97.4155826316293),
                                      (27.76366375180409, -97.4183852486239), (27.768264347848486, -97.42420484534851),
                                      (27.773884407603195, -97.43129914580274)]},
 
-        'Shawn': {'song_url': 'https://open.spotify.com/track/5yK7GOEBZVbXLSpZNufNbA?si=8a4b79dbf5474e97',
+        'Shawn': {'song_url': 'https://open.spotify.com/track/3lUQpvfWFcxZC3RYAVGE7F?si=886e1e835555433a',
                   'coordinates': [(27.76681988996927, -97.42374270629152), (27.761555395965907, -97.43267957846969),
                                   (27.76252826610077, -97.43143917301998), (27.76448190926532, -97.4308831873989),
                                   (27.767291327906804, -97.42661104433081), (27.775321173935314, -97.4180129288392),
                                   (27.76702653189237, -97.41045245758588)]},
 
-        'Joshua': {'song_url': 'https://open.spotify.com/track/58EyI084XBIMRmx6eDGKFQ?si=10bb7e92d880413f',
+        'Joshua': {'song_url': 'https://open.spotify.com/track/54bm2e3tk8cliUz3VSdCPZ?si=93ad3cb263b14ccf',
                    'coordinates': [(27.76271876869386, -97.41733601627041), (27.767867587718452, -97.41896010650974),
                                    (27.758693242983803, -97.42737415010491), (27.76537061568545, -97.42971923717727),
                                    (27.7682972899036, -97.42140757105038), (27.761257302966925, -97.4180664333851),
                                    (27.767567855123623, -97.42398716651955)]},
 
-        'Nicky': {'song_url': 'https://open.spotify.com/track/0MDimlSjIqH6zMGqpfJAew?si=371074ef8b8143f8',
+        'Nicky': {'song_url': 'https://open.spotify.com/track/7BFc7ffruhZ4Hecnqf5xju?si=5a6ea283dcf2470e',
                   'coordinates': [(27.776175660188077, -97.43180222698366), (27.774352145520446, -97.42914314143569),
                                   (27.770510656496754, -97.4238636315693), (27.76809265830245, -97.42560948312881),
                                   (27.77186370453035, -97.43550650822525), (27.771391247766456, -97.4388947560671),
                                   (27.770083872308483, -97.44740726483967)]},
 
-        'Michael': {'song_url': 'https://open.spotify.com/track/0V5cvmTKsYmF5FmGGEAfmS?si=955ab0cbfca14fd7',
+        'Michael': {'song_url': 'https://open.spotify.com/track/00qOE7OjRl0BpYiCiweZB2?si=af56d5c9f3f34ab2',
                     'coordinates': [(27.770839729006692, -97.44074628496256), (27.7668744164277, -97.43909317880617),
                                     (27.76898963540127, -97.43192331383247), (27.771913215486144, -97.43611111723341),
                                     (27.779297325478026, -97.43584790097961), (27.77188803603578, -97.44187338741187),
                                     (27.773007733185853, -97.43868470388946)]},
 
-        'Alex': {'song_url': 'https://open.spotify.com/track/6iaSML1PIYq936g62BDtBq?si=0ad11c522eb24083',
+        'Alex': {'song_url': 'https://open.spotify.com/track/1fCeXjoRExPP2qwSBh2aST?si=0858bcf9d16142c1',
                  'coordinates': [(27.77354676130836, -97.43279481603578), (27.77303899943061, -97.43018802227962),
                                  (27.78211128553692, -97.43053522028785), (27.783200032569773, -97.43376293961553),
                                  (27.784992071615278, -97.43235785606983), (27.793830848580512, -97.42927711062148),
                                  (27.80106097259567, -97.42606612683335)]},
 
-        'Ashely': {'song_url': 'https://open.spotify.com/track/24MWSatP5sTylISvJONhnB?si=148242145bfd42fe',
-                   'coordinates': [(27.796734294405677, -97.43131715989082), (27.795187977337434, -97.42251651072178),
-                                   (27.800699511392146, -97.41417735316652), (27.79191558138719, -97.41757623961094),
-                                   (27.784543402146422, -97.42501236289972), (27.782534642670026, -97.42826954209868),
-                                   (27.781919054476596, -97.43292200548319)]}
+        'Adriana': {'song_url': 'https://open.spotify.com/track/3cIKojC2JBVIno9b35MJWn?si=97e2f650b007429e',
+                    'coordinates': [(27.796734294405677, -97.43131715989082), (27.795187977337434, -97.42251651072178),
+                                    (27.800699511392146, -97.41417735316652), (27.79191558138719, -97.41757623961094),
+                                    (27.784543402146422, -97.42501236289972), (27.782534642670026, -97.42826954209868),
+                                    (27.781919054476596, -97.43292200548319)]}
     }
 
     # setting up how to get how frequently users are nearby
@@ -239,6 +211,7 @@ if __name__ == "__main__":
 
     # sort list by the count
     # syntax gathered from https://www.w3schools.com/python/ref_func_sorted.asp
+    # and here https://www.programiz.com/python-programming/methods/built-in/sorted
     freq_user = sorted(frequent_users.items(), key=lambda x: x[1], reverse=True)
     comm_user = sorted(common_users.items(), key=lambda x: x[1], reverse=True)
     near_user = sorted(nearby_users.items(), key=lambda x: x[1], reverse=True)
@@ -290,12 +263,10 @@ if __name__ == "__main__":
     # print the tracks
     track_list = []
     artist_names = []
-
     for song in song_urls:
-        track_info = auth.track(song)
+        track_info = auth.track(song, market='US')
         track_list.append(track_info['name'])
         artist_names.append([artist['name'] for artist in track_info['artists']])
-        time.sleep(5)
 
     print(track_list)
 
@@ -325,13 +296,9 @@ if __name__ == "__main__":
     beginning_track_artist = beginning_track['artists'][0]['id']
 
     # call the shortest_path function that should connect the beginning song to the send song
-    print("Finding Shortest Path....")
     shortest_path(beginning_track_id, beginning_track_artist, ending_track, ending_track_artist, playlist, auth)
 
     # ending time
     ending_time = time.time()
 
-    print(f"Finished in {ending_time - starting_time} seconds.")
-
-    # closing the session because I am not sure what the error is.
-    auth._session.close()
+    print(f"Finished in {ending_time-starting_time} seconds.")
