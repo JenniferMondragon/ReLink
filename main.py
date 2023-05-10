@@ -82,7 +82,7 @@ def shortest_path(input_song, input_artist, end_song, end_artist, playlist, auth
 
     # taking extremely long, so I updated to stop after a certain amount
     # found out it is due to limit request by Spotify API (you can get temporarily blocked if too many requests
-    max_depth = 50
+    max_depth = 50 # had to keep adjusting
     depth = 0
 
     while adding and depth < max_depth:
