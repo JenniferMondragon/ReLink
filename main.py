@@ -237,7 +237,7 @@ if __name__ == "__main__":
         # Add the count to the dictionary
         if count >= 5:
             frequent_users[user] = count
-        if 2 <= count <= 4:
+        if count >= 3:
             common_users[user] = count
         if count >= 1:
             nearby_users[user] = count
